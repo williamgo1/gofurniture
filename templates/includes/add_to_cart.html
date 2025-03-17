@@ -1,0 +1,18 @@
+<!--добавление/удаление из корзины-->
+<div id="cart-control-{{ id }}" style="width: 180px;">
+    {% if user.is_authenticated %}
+        {% if quantity > 0 %}
+            <div id="counter-{{ id }}" class="counter" role="group">
+                <button class="btn btn-primary decrease" data-goods-id="{{ item.goods.id }}">-</button>
+                    <span class="quantity">{{ quantity }}</span>
+                <button class="btn btn-primary increase" data-goods-id="{{ item.goods.id }}">+</button>
+            </div>
+        {% else %}
+            <button id="add-to-cart-{{ id }}" class="btn btn-primary add-to-cart" data-goods-id="{{ id }}">Добавить в корзину</button>
+        {% endif %}
+    {% else %}
+        <!-- Кнопка-триггер модального окна -->
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Добавить в корзину</button>
+        {% include "goods/includes/modal_window.html" %}
+    {% endif %}
+</div>

@@ -1,0 +1,14 @@
+<!--добавление/удаление из корзины-->
+<div id="cart-control-{{ id }}" style="width: 180px;">
+    {% if item.quantity > 0 %}
+        <div id="counter-{{ item.goods.id }}" class="counter" role="group">
+            <button class="btn btn-primary decrease" data-goods-id="{{ item.goods.id }}">-</button>
+            <span class="quantity">{{ item.quantity }}</span>
+            <button class="btn btn-primary increase" data-goods-id="{{ item.goods.id }}">+</button>
+        </div>
+    {% else %}
+        <button id="add-to-cart-{{ item.goods.id }}" class="add-to-cart" data-goods-id="{{ item.goods.id }}">
+            Добавить в корзину
+        </button>
+    {% endif %}
+</div>

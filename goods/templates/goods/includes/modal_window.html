@@ -1,0 +1,14 @@
+<!-- Модальное окно -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Для этого действия необходимо войти в аккаунт</h5>
+            </div>
+            <div class="modal-footer">
+                <a href="{% url "users:login" %}" type="button" class="btn btn-primary">Войти</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,131 @@
+body {
+    margin: 0 100px;
+}
+
+section {
+    min-height: 570px;
+}
+
+.custom-icon {
+    width: 20px;
+    height: 20px;
+    fill: gray;
+    cursor: pointer;
+    transition: fill 0.3s ease;
+}
+.custom-navbar-icon {
+    width: 25px;
+    height: 25px;
+    fill: gray;
+    cursor: pointer;
+    transition: fill 0.3s ease;
+}
+svg:hover {
+    fill: lightcoral; /* Цвет при наведении */
+  }
+
+.form-p {
+    display: inline-block;
+    min-width: 120px;
+    margin-right: 5px;
+}
+
+.confirm-form-p {
+    display: inline-block;
+    min-width: 250px;
+    margin-right: 5px;
+}
+
+/* Навбар */
+.navbar-category {
+    color: black;
+    text-decoration: none;
+    display: block;
+}
+
+/* Футер */
+footer {
+    margin-top: 50px;
+    padding: 20px 0;
+}
+
+
+/* описание товара */
+.description p {
+    text-indent: 20px;
+    margin-bottom: 5px;
+}
+
+
+/* ширина инпута для цен (фильтрация) */
+.price-input-w {
+    width: 120px;
+}
+
+
+/* users */
+.custom-profile a {
+    display: block;
+    text-decoration: none;
+    color: black;
+}
+
+
+a:hover {
+    color: blue;
+}
+
+
+
+ /* Изменение цвета индикаторов карусели */
+ .carousel-indicators [data-bs-target] {
+   background-color: black;
+ }
+ .carousel-indicators .active {
+   background-color: lightblue;
+ }
+
+
+/* иконка для добавление в избранное */
+.favorite-icon.active {
+    fill: red;
+}
+
+
+/* изображение в карточки товара */
+.fixed-height {
+    height: 300px; /* Фиксированная высота */
+    object-fit: cover; /* Сохраняет пропорции и обрезает изображение */
+}
+
+
+/* цена в карточке товара */
+.card-price p {
+    margin: 0;
+}
+
+
+.custom-card img {
+    max-height: 181px;
+}
+
+
+/* для ровного расположения элементов счетчика */
+.counter {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Отступ между элементами */
+}
+
+/* карусель фото товара */
+#itemPhotoCarousel {
+    width: 700px; /* Фиксированная ширина */
+    height: 600px; /* Фиксированная высота */
+    margin: 0 auto; /* Центрирование слайдера */
+    overflow: hidden; /* Скрываем всё, что выходит за границы */
+}
+.carousel-inner, .carousel-item, .carousel-item img {
+    width: 100%; /* Ширина на 100% от родителя */
+    height: 100%; /* Высота на 100% от родителя */
+    object-fit: contain; /* Вместо cover, чтобы изображение полностью помещалось */
+}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+
+{% block head_title %}
+<title>{{ title }}</title>
+{% endblock head_title %}
+
+
+{% block content %}
+<section>
+<div class="d-flex">
+    {% include "users/includes/base_brofile.html" %}
+    <div class="flex-grow-1 card ms-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between mb-4">
+                <h5>{{ title }}</h5>
+                <a class="btn btn-danger" href="{% url "users:logout" %}">Выйти</a>
+            </div>
+            <div style="width: 350px">
+                {% include "includes/post_form.html" %}
+                <div class="text-center"><a href="{% url 'users:password_change' %}">Изменить пароль</a></div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+{% endblock content %}

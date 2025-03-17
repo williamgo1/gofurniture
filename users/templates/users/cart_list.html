@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+
+{% block head_title %}
+<title>{{ title }}</title>
+{% endblock head_title %}
+
+
+{% block content %}
+<section>
+<div class="d-flex">
+    {% include "users/includes/base_brofile.html" %}
+    <div class="flex-grow-1 card ms-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between mb-4">
+                <h5>{{ title }}</h5>
+                <a href="{% url "users:create_order" %}" class="btn btn-primary">Перейти к оформлению</a>
+            </div>
+
+            {% if cart_items %}
+                <div class="container">
+                    <table class="table">
+                        {% for item in cart_items %}
+                            <tr>
+                                <td class="align-middle">
+                                    <a href="{{ item.goods.get_absolute_url }}">
+                                        <img src="{{ item.goods.photo.url }}" alt="фото товара" height="60px">
+                                    </a>
+                                </td>
+                                <td class="align-middle">
+                                    <div>
+                                        <a href="{{ item.goods.get_absolute_url }}" class="text-decoration-none fw-bold">
+                                            {{ item.goods.name }}
+                                        </a>
+                                        <p class="mb-1">Цвет: {{ item.goods.characteristic.color }}</p>
+                                        <div class="d-flex align-items-center gap-3 m-2">
+                                            <!-- Кнопка для открытия модального окна -->
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"
+                                                class="delete-btn custom-icon"
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal" 
+                                                data-url="{% url 'users:cart_delete' pk=item.pk %}">
+                                                <path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z"/>
+                                            </svg>
+                                            {% include "goods/includes/toggle_favorite.html" with id=item.goods.id %}
+                                            <a href="#" class="text-decoration-none">Купить</a>
+                                        </div>
+                                    </div>
+                                    <!-- Модальное окно -->
+                                    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="deleteModalLabel">Удалить товар</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    Вы уверены, что хотите удалить этот товар?
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                    <button type="button" class="btn btn-danger" id="confirmDelete">Удалить</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="align-middle">
+                                    <div class="d-flex justify-content-end" style="width: 230px;">
+                                        {% if item.total_current_amout != item.total_old_amout %}
+                                            <p class="mb-0 me-3">{{ item.total_current_amout|intcomma }} ₽</p>
+                                            <p class="mb-0 me-3"><s>{{ item.total_old_amout|intcomma }} ₽</s></p>
+                                            <p class="mb-0 text-danger">{{ item.discount }}%</p>
+                                        {% else %}
+                                            <p class="mb-0">{{ item.total_current_amout|intcomma }} ₽</p>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="align-middle">
+                                    {% include "includes/add_to_cart.html" with id=item.goods.id quantity=item.quantity %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                <div class="d-flex justify-content-end gap-3 me-3">
+                    <p>Итого:</p>
+                    <p>{{ total_amount|intcomma }} ₽</p>
+                </div>
+            {% else %}
+                <p>Ваша корзина пуста.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</section>
+
+{% include "includes/token.html" %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Скрипт для обработки удаления -->
+<script>
+    $(document).ready(function() {
+        var deleteUrl;  // Переменная для хранения URL удаления
+
+        // При открытии модального окна обновляем URL удаления
+        $('.delete-btn').click(function() {
+            deleteUrl = $(this).data('url');
+        });
+
+        // При подтверждении удаления отправляем POST-запрос
+        $('#confirmDelete').click(function() {
+            $.ajax({
+                url: deleteUrl,
+                method: 'POST',
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    location.reload();  // Перезагружаем страницу после удаления
+                },
+                error: function(xhr, status, error) {
+                    console.error("Ошибка:", error);  // Логируем ошибку
+                }
+            });
+        });
+    });
+</script>
+<script src="{% static "js/favorites.js" %}"></script>
+<script src="{% static "js/cart.js" %}"></script>
+{% endblock content %}

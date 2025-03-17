@@ -1,0 +1,22 @@
+<!--шаблон для отображения формы-->
+<form action="" method="post">
+    {% csrf_token %}
+    <div class="text-center text-danger mb-3">
+        {% for error in form.errors %}
+            <p>Некорректное значение поля {{ error }}</p>
+        {% endfor %}
+    </div>
+    
+    <table class="mb-2">
+        <tbody>
+            {% for field in form %}
+                <tr>
+                    <td class="pb-2">{{ field.label }}:</td>
+                    <td class="pb-2 ps-3">{{ field }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="text-center mb-2"><button class="btn btn-primary mt-2" type="submit">{{ submit_button }}</button></div>
+</form>
+

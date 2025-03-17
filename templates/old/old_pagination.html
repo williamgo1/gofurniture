@@ -1,0 +1,33 @@
+<!-- блок пагинации-->
+{% if page_obj.has_other_pages %}
+            <!-- Начало пагинации -->
+            <nav class="mt-5" aria-label="Навигация по страницам">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page=1">Первая</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Предыдущая">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{{ page_obj.number|add:"-1" }}</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">{{ page_obj.number|add:"1" }}</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Следующая">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Последняя</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+{% endif %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block head_title %}
+<title>{{ title }}</title>
+{% endblock head_title %}
+
+
+{% block content %}
+<section>
+<div class="d-flex">
+    {% include "users/includes/base_brofile.html" %}
+
+    <div class="flex-grow-1 card ms-3">
+        <div class="card-body">
+            <h5 class="mb-4">{{ title }}</h5>
+
+            {% if favorite_goods %}
+                <div class="row">
+                    {% include 'includes/goods_list.html' with goods_list=favorite_goods %}
+                </div>
+            {% else %}
+                <p>У вас пока нет избранных товаров.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</section>
+
+{% include "includes/token.html" %}
+<script src="{% static "js/favorites.js" %}"></script>
+{% endblock content %}

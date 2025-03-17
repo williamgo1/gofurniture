@@ -1,0 +1,12 @@
+<div class="col-2">
+    <div class="card">
+        <div class="card-body custom-profile">
+            <a class="mb-3 fw-bold" href="{% url "users:profile" %}">Личная информация</a>
+            <a class="mb-3 fw-bold" href="{% url "users:favorite_list" %}">Избранное</a>
+            <p class="mb-0 fw-bold">Заказы:</p>
+            <a class="ms-2" href="{% url "users:cart_list" %}">Корзина</a>
+            <a class="ms-2 mb-3" href="{% url "users:order_list" %}">Мои заказы</a>
+            <a class="fw-bold" href="#">Поддержка</a>
+        </div>
+    </div>
+</div>

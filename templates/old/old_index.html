@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block head_title %}
+    <title>{{ title }}</title>
+{% endblock head_title %}
+
+
+{% block content %}
+<section>
+    <div class="d-flex">
+        <!-- Блок фильтрации -->
+        <div class="p-3">
+            <div class="card sticky-top" style="width: 300px; top: 100px;">
+                <div class="card-body">
+                    <h5 class="card-title text-center mb-2">Фильтры</h5>
+                    <form method="get" action="{% url 'goods:goods_list' %}">
+                        <p class="mb-2">Сортировка</p>
+                        {{ filter_form.sort }}
+                        <p class="mb-2">Цена</p>
+                        {{ filter_form.min_price }}
+                        {{ filter_form.max_price }}
+                        <p class="mb-2">Цвет</p>
+                        {{ filter_form.color }}
+                        <p class="mb-2">Материал</p>
+                        {{ filter_form.material }}
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary mb-2 mt-2">Применить</button>
+                            <a class="d-block" href="{% url "goods:goods_list" %}">Сбросить фильтры</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Блок карточек товаров -->
+        <div class="flex-grow-1 p-3">
+            <div class="row">
+                {% if goods_list %}
+                    {% for goods in goods_list %}
+                        <div class="col-xl-4 col-lg-6 mb-4">
+                            {% include "includes/goods_card.html" %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <h2 class="text-center">Товары не найдены</h2>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+
+    <!-- блок пагинации-->
+    {% if page_obj.has_other_pages %}
+                <!-- Начало пагинации -->
+                <nav class="mt-5" aria-label="Навигация по страницам">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page=1">Первая</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Предыдущая">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{{ page_obj.number|add:"-1" }}</a>
+                        </li>
+                        {% endif %}
+                        
+                        <li class="page-item disabled"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">{{ page_obj.number|add:"1" }}</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Следующая">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Последняя</a></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+    {% endif %}
+</section>
+
+{% include "includes/token.html" %}
+<script src="{% static "js/favorites.js" %}"></script>
+{% endblock content %}

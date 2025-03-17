@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block head_title %}
+    <title>{{ title }}</title>
+{% endblock head_title %}
+
+
+{% block content %}
+<section>
+    <div class="d-flex">
+        <!-- Блок фильтрации -->
+        <div class="p-3">
+            <div class="card sticky-top" style="width: 300px; top: 100px;">
+                <div class="card-body">
+                    <h5 class="card-title text-center mb-2">Фильтры</h5>
+                    <form id="filter_form" method="get" action="{% url 'goods:goods_list' %}">
+                        <p class="mb-2">Сортировка</p>
+                        {{ filter_form.sort }}
+                        <p class="mb-2">Цена</p>
+                        {{ filter_form.min_price }}
+                        {{ filter_form.max_price }}
+                        <p class="mb-2">Цвет</p>
+                        {{ filter_form.color }}
+                        <p class="mb-2">Материал</p>
+                        {{ filter_form.material }}
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary mb-2 mt-2">Применить</button>
+                            <a class="d-block" href="{% url "goods:goods_list" %}">Сбросить фильтры</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Блок карточек товаров -->
+        <div class="flex-grow-1 p-3">
+            {% if goods_list %}
+                <div class="row">
+                    {% include 'includes/goods_list.html' with goods_list=goods_list %}
+                </div>
+            {% else %}
+                <h2 class="text-center">Товары не найдены</h2>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+{% include "includes/token.html" %}
+<script src="{% static "js/favorites.js" %}"></script>
+{% endblock content %}

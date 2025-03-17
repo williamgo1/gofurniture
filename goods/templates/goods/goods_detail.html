@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+{% load static %}
+{% load humanize %}
+
+
+{% block head_title %}
+    <title>{{ title }}</title>
+{% endblock head_title %}
+
+
+{% block content %}
+<section>
+    <div class="container">
+        <div class="row mb-3">
+            <!--карусель с фото товара-->
+            <div class="col-7">
+                <div id="itemPhotoCarousel" class="carousel slide border rounded">
+                    <div class="carousel-indicators">
+                        <button type="button" data-bs-target="#itemPhotoCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                        <button type="button" data-bs-target="#itemPhotoCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                    </div>
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                        <img src="{{ goods.photo.url }}" class="d-block w-100" alt="фото товара">
+                        </div>
+                        <div class="carousel-item">
+                        <img src="{{ goods.photo.url }}" class="d-block w-100" alt="фото товара">
+                        </div>
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#itemPhotoCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Предыдущий</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#itemPhotoCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Следующий</span>
+                    </button>
+                </div>
+            </div>
+
+            <!--основная информация-->
+            <div class="col-5">
+                <h5 class="me-3">{{ goods.name }}</h5>
+                
+                <div class="d-flex align-items-center my-3">
+                    <p class="mb-0 me-3">Артикул: {{ goods.article }}</p>
+                    {% include "goods/includes/toggle_favorite.html" with id=goods.id %}
+                </div>
+                
+                <div class="d-flex mb-2">
+                    <div class="d-flex align-items-center">
+                        <!--цены и скидка-->
+                        {% if current_price == old_price %}
+                            <p class="m-0 me-4">{{ current_price|intcomma }} ₽</p>
+                        {% else %}
+                            <p class="m-0 me-3 p-1 bg-warning bg-opacity-75 rounded">{{ current_price|intcomma }} ₽</p>
+                            <p class="m-0 me-3"><s>{{ old_price|intcomma }} ₽</s></p>
+                            <p class="m-0 me-4 text-danger">Скидка: {{ percent }}%</p>
+                        {% endif %}
+                    </div>
+                    {% include "includes/add_to_cart.html" with id=goods.id quantity=cart_quantity %}
+                </div>
+
+                <!--характеристики товара-->
+                <table>
+                    <tr>
+                        <th>Характеристики</th>
+                    </tr>
+                    <tbody>
+                        {% for k, v in goods.characteristic.items %}
+                        <tr>
+                            <td>{{ russian_names|get_by_key:k }}:</td>
+                            <td class="ps-2">{{ v }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if goods.description %}
+            <!-- Описание товара -->
+            <div class="row ms-2">
+                <div class="col-7">
+                    <h5>Информация о продукте</h5>
+                    <div class="description">
+                        {% for paragraph in goods.description|split_paragraphs %}
+                            <p>{{ paragraph }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{% include "includes/token.html" %}
+<script src="{% static "js/favorites.js" %}"></script>
+<script src="{% static "js/cart.js" %}"></script>
+{% endblock content %}
