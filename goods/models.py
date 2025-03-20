@@ -7,12 +7,23 @@ from unidecode import unidecode
 class Category(models.Model):
     name = models.CharField(max_length=100, db_index=True, unique=True, verbose_name='Категория')
     slug = models.SlugField(max_length=100, unique=True, verbose_name='Слаг')
+    photo = models.ImageField(max_length=100, null=True, blank=True, verbose_name='Фото категории')
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True,
+                               related_name='children',
+                               verbose_name='Родительская категория'
+                               )
 
     def __str__(self):
         return self.name
     
     def get_absolute_url(self):
-        return reverse('goods:category', kwargs={"cat_slug": self.slug})
+        """Возвращает URL категории с учетом вложенности."""
+        if self.parent:
+            # Если это подкатегория, используем маршрут для подкатегорий
+            return reverse('goods:subcategory_detail', args=[self.parent.slug, self.slug])
+        # Если это главная категория, используем маршрут для категорий
+        return reverse('goods:category_detail', args=[self.slug])
+        # return reverse('goods:category', kwargs={"cat_slug": self.slug})
     
     def save(self, *args, **kwargs):
         self.slug = slugify(unidecode(self.name))
@@ -30,12 +41,33 @@ class Goods(models.Model):
     description = models.TextField(blank=True, verbose_name="Описание")
     characteristic = models.JSONField(verbose_name="Характеристика")
     quantity = models.PositiveIntegerField(verbose_name="Количество")
-    photo = models.ImageField(max_length=100, verbose_name='Фото статьи')
+    photo = models.ImageField(max_length=100, verbose_name='Фото Товара')
     time_update = models.DateTimeField(auto_now=True, verbose_name='Время изменения')
     categories = models.ManyToManyField(Category, related_name='goods', verbose_name='Категории')
 
     def __str__(self):
         return self.name
+
+    def get_current_price(self):
+        """Возвращает актуальную цену товара."""
+        current_price = self.prices.order_by('-time_update').first()
+        if current_price:
+            return current_price.price
+        return 0
+
+    def get_current_discount(self):
+        """Возвращает актуальную цену товара."""
+        current_price = self.prices.order_by('-time_update').first()
+        if current_price:
+            return current_price.percent
+        return 0
+
+    def get_origin_price(self):
+        """Возвращает начальную цену товара."""
+        origin_price = self.prices.order_by('time_update').first()
+        if origin_price:
+            return origin_price.price
+        return 0
 
     def get_absolute_url(self):
         return reverse('goods:goods_detail', kwargs={"slug": self.slug})
@@ -65,13 +97,13 @@ class Price(models.Model):
     goods = models.ForeignKey(Goods, on_delete=models.CASCADE, verbose_name="Товар", related_name="prices")
     time_update = models.DateTimeField(auto_now=True, verbose_name='Время изменения')
 
-
     def __str__(self):
         return f"{self.price}"
-    
+
     class Meta:
         verbose_name = "Цена"
         verbose_name_plural = "Цены"
+        ordering = ['-time_update']
 
     # def save(self, *args, **kwargs):
     #     origin_price = Price.objects.filter(self.goods)

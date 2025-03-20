@@ -22,13 +22,27 @@ class Cart(models.Model):
     quantity = models.PositiveIntegerField(default=1, verbose_name="Количество")
     added_at = models.DateTimeField(auto_now_add=True, verbose_name="Время добавления")
 
+    def __str__(self):
+        return f"{self.user.username} - {self.goods.name} (x{self.quantity})"
+    
+    def get_current_total_cost(self):
+        """Возвращает общую стоимость товара с учетом актуальной цены."""
+        # Получаем последнюю обновленную цену товара
+        price = self.goods.get_current_price()
+        return price * self.quantity
+    
+    def get_origin_total_cost(self):
+        """Возвращает общую стоимость товара с учетом актуальной цены."""
+        # Получаем последнюю обновленную цену товара
+        price = self.goods.get_origin_price()
+        return price * self.quantity
+
     class Meta:
         unique_together = ('user', 'goods')
         verbose_name = "Корзина"
         verbose_name_plural = "Корзины"
 
-    def __str__(self):
-        return f"{self.user.username} - {self.goods.name} (x{self.quantity})"
+    
 
 
 class Order(models.Model):
@@ -53,6 +67,10 @@ class Order(models.Model):
     def __str__(self):
         return f"Заказ #{self.id} от {self.user.username}"
     
+    def get_total_cost(self):
+        """Возвращает общую стоимость заказа."""
+        return sum(item.get_total_cost() for item in self.items.all())
+    
     class Meta:
         verbose_name = 'Заказ'
         verbose_name_plural = 'Заказы'
@@ -65,12 +83,12 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.goods.name} ({self.quantity} шт.)"
-
-    def total_price(self):
-        """Возвращает общую стоимость товара с учетом последней цены."""
+    
+    def get_total_cost(self):
+        """Возвращает общую стоимость товара с учетом актуальной цены."""
         # Получаем последнюю обновленную цену товара
-        latest_price = self.goods.prices.order_by('-time_update').first()
-        return f"{intcomma(latest_price.price * self.quantity)} ₽"
+        price = self.goods.get_current_price()
+        return price * self.quantity
 
     class Meta:
         verbose_name = 'Товар в заказе'

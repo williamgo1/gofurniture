@@ -19,6 +19,14 @@
                 <a href="{% url "users:create_order" %}" class="btn btn-primary">Перейти к оформлению</a>
             </div>
 
+            {% if messages %}
+                <div class="alert alert-danger">
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
             {% if cart_items %}
                 <div class="container">
                     <table class="table">
@@ -68,12 +76,12 @@
                                 </td>
                                 <td class="align-middle">
                                     <div class="d-flex justify-content-end" style="width: 230px;">
-                                        {% if item.total_current_amout != item.total_old_amout %}
-                                            <p class="mb-0 me-3">{{ item.total_current_amout|intcomma }} ₽</p>
-                                            <p class="mb-0 me-3"><s>{{ item.total_old_amout|intcomma }} ₽</s></p>
-                                            <p class="mb-0 text-danger">{{ item.discount }}%</p>
+                                        {% if item.get_current_total_cost != item.get_origin_total_cost %}
+                                            <p class="mb-0 me-3">{{ item.get_current_total_cost|intcomma }} ₽</p>
+                                            <p class="mb-0 me-3"><s>{{ item.get_origin_total_cost|intcomma }} ₽</s></p>
+                                            <p class="mb-0 text-danger">{{ item.goods.get_current_discount }}%</p>
                                         {% else %}
-                                            <p class="mb-0">{{ item.total_current_amout|intcomma }} ₽</p>
+                                            <p class="mb-0">{{ item.get_current_total_cost|intcomma }} ₽</p>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -84,9 +92,34 @@
                         {% endfor %}
                     </table>
                 </div>
-                <div class="d-flex justify-content-end gap-3 me-3">
-                    <p>Итого:</p>
-                    <p>{{ total_amount|intcomma }} ₽</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4>Итого: {{ total_amount|intcomma }} ₽</h4>
+                    <!-- Кнопка для открытия модального окна -->
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
+                        Очистить корзину
+                    </button>
+                    <!-- Модальное окно -->
+                    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="confirmDeleteModalLabel">Подтверждение удаления</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Вы уверены, что хотите удалить все товары из корзины?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                    <!-- Кнопка для подтверждения удаления -->
+                                    <form action="{% url 'users:clear_cart' %}" method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">Удалить</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             {% else %}
                 <p>Ваша корзина пуста.</p>
@@ -98,35 +131,7 @@
 
 {% include "includes/token.html" %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- Скрипт для обработки удаления -->
-<script>
-    $(document).ready(function() {
-        var deleteUrl;  // Переменная для хранения URL удаления
-
-        // При открытии модального окна обновляем URL удаления
-        $('.delete-btn').click(function() {
-            deleteUrl = $(this).data('url');
-        });
-
-        // При подтверждении удаления отправляем POST-запрос
-        $('#confirmDelete').click(function() {
-            $.ajax({
-                url: deleteUrl,
-                method: 'POST',
-                data: {
-                    csrfmiddlewaretoken: '{{ csrf_token }}'
-                },
-                success: function(response) {
-                    location.reload();  // Перезагружаем страницу после удаления
-                },
-                error: function(xhr, status, error) {
-                    console.error("Ошибка:", error);  // Логируем ошибку
-                }
-            });
-        });
-    });
-</script>
+<script src="{% static "js/delete_from_cart.js" %}"></script>
 <script src="{% static "js/favorites.js" %}"></script>
 <script src="{% static "js/cart.js" %}"></script>
 {% endblock content %}

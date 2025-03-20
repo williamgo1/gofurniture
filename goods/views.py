@@ -1,13 +1,14 @@
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
+from django.core.paginator import Paginator
 from django.views.generic import ListView, DetailView
 from django.db.models import Q
 
-from users.models import Cart, Favorite
+from users.models import Cart
 from .models import Goods, Category
 from .forms import GoodsSearchForm, GoodsFilterForm
 
-from utils.queryset_utils import get_annotated_queryset, get_favorites
+from utils.queryset_utils import get_favorites, get_cart_quantity, get_filtered_queryset, get_annotated_queryset
+from utils.mixins import HTMXTemplateMixin
 
 
 russian_names = {
@@ -23,76 +24,95 @@ russian_names = {
 }
 
 
-class GoodsListView(ListView):
+class GoodsListView(HTMXTemplateMixin, ListView):
     model = Goods
     extra_context = {'title': 'gofurniture'}
     template_name = 'goods/index.html'
     context_object_name = 'goods_list'
     paginate_by = 18
 
-    def get_template_names(self, *args, **kwargs): 
-        if self.request.htmx: 
-            return "includes/goods_list.html" 
-        else: 
-            return self.template_name
-
     def get_queryset(self):
         goods_filter = GoodsFilterForm(self.request.GET)
         goods_search = GoodsSearchForm(self.request.GET)
+
+        goods = Goods.objects.all()
+        goods = get_annotated_queryset(goods)
 
         # поиск по названию/артикулу
         if goods_search.is_valid():
             query = goods_search.cleaned_data['search']
             if query:
-                goods = Goods.objects.filter(Q(name__icontains=query) | Q(article__icontains=query))
-                goods = get_annotated_queryset(goods)
+                goods = goods.filter(Q(name__icontains=query) | Q(article__icontains=query))
                 return goods
-
-        goods = Goods.objects.all()
-        # добавляем цены и скидки к товарам
-        goods = get_annotated_queryset(goods)
-
-        # Получаем слаг категории из URL
-        category_slug = self.kwargs.get('category_slug')
-        if category_slug:
-            # Фильтруем товары по категории
-            category = get_object_or_404(Category, slug=category_slug)
-            return goods.filter(categories=category)
  
-        # фильтрация
-        if goods_filter.is_valid():
-            sort = goods_filter.cleaned_data.get('sort')
-            min_price = goods_filter.cleaned_data.get('min_price')
-            max_price = goods_filter.cleaned_data.get('max_price')
-            color = goods_filter.cleaned_data.get('color')
-            material = goods_filter.cleaned_data.get('material')
-
-            if min_price:
-                goods = goods.filter(current_price__gte=min_price)
-            if max_price:
-                goods = goods.filter(current_price__lte=max_price)
-            if color:
-                goods = goods.filter(characteristic__color__icontains=color)
-            if material:
-                goods = goods.filter(characteristic__materials__icontains=material)
-
-            if sort == 'price_asc':
-                goods = goods.order_by('current_price')
-            elif sort == 'price_desc':
-                goods = goods.order_by('-current_price')
-            elif sort == 'discount':
-                goods = goods.order_by('-discount')
+        goods = get_filtered_queryset(goods, goods_filter)
         return goods
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["categories"] = Category.objects.filter(parent__isnull=True)  # Только главные категории
         context['user_favorites'] = get_favorites(self.request.user)
         context["is_card"] = True
         context['search_form'] = GoodsSearchForm(self.request.GET)
         context['filter_form'] = GoodsFilterForm(self.request.GET)
         context["russian_names"] = russian_names
         # для бесконечной прокрутки htmx
-        context["load_url"] = reverse("goods:goods_list")
+        context["load_url"] = self.request.path
+        return context
+
+
+class CategoryListView(HTMXTemplateMixin, ListView):
+    model = Goods
+    template_name = 'goods/category_detail.html'
+    context_object_name = 'goods_list'
+    paginate_by = 18
+
+    def get_category(self):
+        """
+        Вспомогательный метод для получения категории.
+        """
+        category_slug = self.kwargs.get('category_slug')
+        subcategory_slug = self.kwargs.get('subcategory_slug', None)
+
+        if subcategory_slug:
+            # Если есть подкатегория, получаем её
+            return get_object_or_404(
+                Category,
+                slug=subcategory_slug,
+                parent__slug=category_slug
+            )
+        else:
+            # Иначе получаем главную категорию
+            return get_object_or_404(Category, slug=category_slug)
+
+    def get_queryset(self):
+        goods_filter = GoodsFilterForm(self.request.GET)
+
+        # Получаем товары для категории
+        goods = Goods.objects.filter(categories=self.get_category())
+        goods = get_annotated_queryset(goods)
+        goods = get_filtered_queryset(goods, goods_filter)
+
+        return goods
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        category = self.get_category()
+
+        # Добавляем категорию и подкатегории в контекст
+        context['category'] = category
+        context['subcategories'] = category.children.all()
+
+        context['user_favorites'] = get_favorites(self.request.user)
+        context["is_card"] = True
+        context['filter_form'] = GoodsFilterForm(self.request.GET)
+        context["russian_names"] = russian_names
+        context["load_url"] = self.request.path
+
+        # URL для загрузки следующей страницы (для HTMX)
+        context['load_url'] = self.request.path
+
         return context
 
 
@@ -104,22 +124,10 @@ class GoodsDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         goods = context['goods']
-        
-        # Получение цен
-        prices = goods.prices.order_by('-time_update')
-        current_price, old_price = prices.first(), prices.last()
 
-        if self.request.user.is_authenticated:
-            # Получаем количество товара в корзине для текущего пользователя
-            cart_item = Cart.objects.filter(user=self.request.user, goods=goods).first()
-            context['cart_quantity'] = cart_item.quantity if cart_item else 0
-        else:
-            context['cart_quantity'] = 0
-
+        context['cart_quantity'] = get_cart_quantity(self.request.user, goods)
         context['user_favorites'] = get_favorites(self.request.user)
-        context['current_price'] = current_price.price
-        context['percent'] = current_price.percent
-        context['old_price'] = old_price.price
         context['title'] = goods.name
         context["russian_names"] = russian_names
+
         return context

@@ -1,22 +1,25 @@
 import json
-from django.shortcuts import get_object_or_404, render
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.views.generic import CreateView, UpdateView, ListView, DetailView
 from django.contrib.auth.views import PasswordChangeView, LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model, logout
+from django.contrib import messages
 
 from .models import Favorite, Cart, Order, OrderItem
-from goods.models import Goods, Price
 from .forms import UserCreateForm, UserLoginForm, UserPasswordChangeForm, UserUpdateForm, OrderForm
+from goods.models import Goods
+from goods.views import russian_names
+from utils.queryset_utils import get_annotated_queryset, get_favorites
+from utils.mixins import HTMXTemplateMixin
 
 from django.urls import reverse_lazy, reverse
 from django.http import HttpResponseRedirect, JsonResponse
 from django.views.decorators.http import require_POST
-from django.db.models import OuterRef, Subquery, IntegerField, Case, When, Value
-
-from goods.views import russian_names
-from utils.queryset_utils import get_annotated_queryset, get_favorites
+from django.db.models import IntegerField, Case, When, Value
 
 
 class UserProfileView(LoginRequiredMixin, UpdateView):
@@ -27,7 +30,7 @@ class UserProfileView(LoginRequiredMixin, UpdateView):
     extra_context = {'title': 'Профиль',
                      "submit_button": "Сохранить изменения"
                      }
-    
+
     def get_object(self, queryset=None):
         return self.request.user
 
@@ -57,7 +60,7 @@ def user_logout(request):
 
 class UserPasswordChangeView(PasswordChangeView):
     form_class = UserPasswordChangeForm
-    template_name = 'users/password_change_form.html'
+    template_name = 'users/password/password_change_form.html'
     success_url = reverse_lazy('users:password_change_done')
     extra_context = {'title': 'Изменение пароля',
                      "submit_button": "Изменить пароль"
@@ -82,33 +85,27 @@ class ToggleFavoriteView(LoginRequiredMixin, View):
             return JsonResponse({'success': True, 'action': 'added'})
 
 
-class FavoriteListView(LoginRequiredMixin, ListView):
+class FavoriteListView(LoginRequiredMixin, HTMXTemplateMixin, ListView):
     """
     Класс для отображения списка избранных товаров.
     """
     template_name = 'users/favorite_list.html'
-    context_object_name = 'favorite_goods'
+    context_object_name = 'goods_list'
+    paginate_by = 9
     extra_context = {
         "russian_names": russian_names,
         'title': 'Избранное',
     }
 
-    def get_template_names(self, *args, **kwargs): 
-        if self.request.htmx: 
-            return "includes/goods_list.html" 
-        else: 
-            return self.template_name
-
     def get_queryset(self):
-        favorite_goods = Goods.objects.filter(favorite__user=self.request.user)
-        favorite_goods = get_annotated_queryset(favorite_goods)
-        return favorite_goods
+        goods = Goods.objects.filter(favorite__user=self.request.user)
+        return get_annotated_queryset(goods)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['user_favorites'] = get_favorites(self.request.user)
         context["is_card"] = True
-        context["load_url"] = reverse("users:favorite_list")
+        context["load_url"] = self.request.path
         return context
 
 
@@ -127,28 +124,11 @@ class CartListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         cart_items = context['cart_items']
 
-        for item in cart_items:
-            # Получаем первую цену (самая старая цена)
-            old_price = Price.objects.filter(goods=item.goods).order_by('time_update').first()
-            item.old_price = old_price.price
-            
-            # Получаем последнюю цену (самая новая цена)
-            current_price = Price.objects.filter(goods=item.goods).order_by('-time_update').first()
-            item.current_price = current_price.price
-            item.discount = current_price.percent
-            
-            # Вычисляем старая сумму
-            item.total_old_amout = item.old_price * item.quantity
-
-            # Вычисляем текущую сумму
-            item.total_current_amout = item.current_price * item.quantity
-        
         # Вычисляем общую сумму для всех товаров в корзине
-        total_amount = sum(item.total_current_amout for item in cart_items)
+        total_amount = sum(item.get_current_total_cost() for item in cart_items)
 
         context['user_favorites'] = get_favorites(self.request.user)
         context["is_card"] = False
-
         context["title"] = "Корзина"
         context["total_amount"] = total_amount
         return context
@@ -172,6 +152,13 @@ class AddToCartView(LoginRequiredMixin, View):
             action = 'added'
 
         return JsonResponse({'success': True, 'action': action})
+
+
+@login_required
+def clear_cart(request):
+    """Удаляет все товары из корзины текущего пользователя."""
+    Cart.objects.filter(user=request.user).delete()
+    return redirect('users:cart_list')
 
 
 @require_POST
@@ -206,37 +193,71 @@ class UpdateCartView(LoginRequiredMixin, View):
 class CreateOrderView(LoginRequiredMixin, CreateView):
     model = Order
     form_class = OrderForm
-    template_name = 'users/create_order.html'
+    template_name = 'users/order/create_order.html'
     success_url = reverse_lazy('users:order_success')
     extra_context = {"title": "Оформление заказа",
                      "submit_button": "Оформить заказ"
                      }
+    
+    def get(self, request, *args, **kwargs):
+        # Проверяем, есть ли товары в корзине
+        cart_items = Cart.objects.filter(user=self.request.user)
+        if not cart_items.exists():
+            messages.error(request, "Добавьте товары, чтобы оформить заказ.")
+            return redirect('users:cart_list')  # Перенаправляем на страницу корзины
+        return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        # Привязываем заказ к текущему пользователю
-        form.instance.user = self.request.user
-        response = super().form_valid(form)
-
-        # Переносим товары из корзины в заказ
+        # Проверяем, есть ли товары в корзине
         cart_items = Cart.objects.filter(user=self.request.user)
+
+        if not cart_items.exists():
+            messages.error(self.request, "Добавьте товары, чтобы оформить заказ.")
+            return redirect('users:cart_list')  # Перенаправляем на страницу корзины
+
+        # Проверяем наличие товаров
         for item in cart_items:
-            OrderItem.objects.create(
-                order=self.object,  # self.object — это созданный заказ
-                goods=item.goods,
-                quantity=item.quantity
-            )
-            item.delete()  # Очищаем корзину
-        return response
+            goods = item.goods
+            if item.quantity > goods.quantity:
+                messages.error(self.request, f"Недостаточно товара '{goods.name}' на складе.")
+                return redirect('users:cart_list')
+            
+        try:
+            # Начинаем транзакцию
+            with transaction.atomic():
+        
+                # Создаем заказ
+                order = form.save(commit=False)
+                order.user = self.request.user
+                order.save()
+
+                # Переносим товары из корзины в заказ
+                for item in cart_items:
+                    goods = item.goods
+                    OrderItem.objects.create(
+                        order=order,
+                        goods=goods,
+                        quantity=item.quantity
+                    )
+                    # Уменьшаем количество товара на складе
+                    goods.quantity -= item.quantity
+                    goods.save()
+                    item.delete()  # Очищаем корзину
+                return super().form_valid(form)
+        except Exception as e:
+            # Если произошла ошибка, откатываем транзакцию
+            messages.error(self.request, f"Произошла ошибка при оформлении заказа: {str(e)}")
+            return redirect('users:cart_list')
 
 
 def order_success(request):
     data = {"title": "Заказ Заказ успешно оформлен!"}
-    return render(request, "users/order_success.html", context=data)
+    return render(request, "users/order/order_success.html", context=data)
 
 
 class OrderListView(LoginRequiredMixin, ListView):
     model = Order
-    template_name = 'users/order_list.html'
+    template_name = 'users/order/order_list.html'
     context_object_name = 'orders'
     extra_context = {"title": "Заказы"}
 
@@ -253,8 +274,9 @@ class OrderListView(LoginRequiredMixin, ListView):
 
 class OrderDetailView(LoginRequiredMixin, DetailView):
     model = Order
-    template_name = 'users/order_detail.html'
+    template_name = 'users/order/order_detail.html'
     context_object_name = 'order'
 
     def get_queryset(self):
+        # Ограничиваем доступ только к заказам текущего пользователя
         return Order.objects.filter(user=self.request.user)

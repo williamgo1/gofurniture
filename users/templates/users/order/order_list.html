@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+
+{% block head_title %}
+<title>{{ title }}</title>
+{% endblock head_title %}
+
+
+{% block content %}
+<section>
+<div class="d-flex">
+    {% include "users/includes/base_brofile.html" %}
+    <div class="flex-grow-1 card ms-3">
+        <div class="card-body">
+            <h5 class="mb-4">{{ title }}</h5>
+
+            {% if orders %}
+                <div class="container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th><p>ID</p></th>
+                                <th><p>Сумма</p></th>
+                                <th><p>Статус</p></th>
+                                <th><p>Время создания</p></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in orders %}
+                                <tr>
+                                    <td><a href="{% url "users:order_detail" item.id %}">{{ item.id }}</a></td>
+                                    <td>{{ item.get_total_cost }} ₽</td>
+                                    <td>{{ item.status }}</td>
+                                    <td>{{ item.created_at }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>У вас пока нет заказов.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</section>
+{% endblock content %}

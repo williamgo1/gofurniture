@@ -51,12 +51,12 @@
                 <div class="d-flex mb-2">
                     <div class="d-flex align-items-center">
                         <!--цены и скидка-->
-                        {% if current_price == old_price %}
-                            <p class="m-0 me-4">{{ current_price|intcomma }} ₽</p>
+                        {% if goods.get_current_price == goods.get_origin_price %}
+                            <p class="m-0 me-4">{{ goods.get_current_price|intcomma }} ₽</p>
                         {% else %}
-                            <p class="m-0 me-3 p-1 bg-warning bg-opacity-75 rounded">{{ current_price|intcomma }} ₽</p>
-                            <p class="m-0 me-3"><s>{{ old_price|intcomma }} ₽</s></p>
-                            <p class="m-0 me-4 text-danger">Скидка: {{ percent }}%</p>
+                            <p class="m-0 me-3 p-1 bg-warning bg-opacity-75 rounded">{{ goods.get_current_price|intcomma }} ₽</p>
+                            <p class="m-0 me-3"><s>{{ goods.get_origin_price|intcomma }} ₽</s></p>
+                            <p class="m-0 me-4 text-danger">Скидка: {{ goods.get_current_discount }}%</p>
                         {% endif %}
                     </div>
                     {% include "includes/add_to_cart.html" with id=goods.id quantity=cart_quantity %}

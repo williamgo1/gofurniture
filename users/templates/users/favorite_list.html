@@ -16,9 +16,9 @@
         <div class="card-body">
             <h5 class="mb-4">{{ title }}</h5>
 
-            {% if favorite_goods %}
+            {% if goods_list %}
                 <div class="row">
-                    {% include 'includes/goods_list.html' with goods_list=favorite_goods %}
+                    {% include 'includes/goods_list.html' %}
                 </div>
             {% else %}
                 <p>У вас пока нет избранных товаров.</p>

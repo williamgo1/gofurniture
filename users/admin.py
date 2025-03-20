@@ -20,15 +20,16 @@ class CartAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['__str__', 'phone', 'created_at', 'status']
+    list_display = ['__str__', 'get_total_cost', 'phone', 'created_at', 'status']
     list_display_links = ['__str__']
-    readonly_fields = ['user', 'phone', 'address', 'created_at']
+    list_editable = ['status']
+    readonly_fields = ['user', 'get_total_cost', 'phone', 'address', 'created_at']
     list_filter = ["user"]
 
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
-    list_display = ['order', 'goods', 'total_price', 'quantity']
+    list_display = ['order', 'goods', 'get_total_cost', 'quantity']
     list_display_links = ['order']
-    readonly_fields = ['order', 'goods', 'total_price', 'quantity']
+    readonly_fields = ['order', 'goods', 'get_total_cost', 'quantity']
     list_filter = ["order"]

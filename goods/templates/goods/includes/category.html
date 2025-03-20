@@ -1,0 +1,13 @@
+<!--Категории-->
+{% if categories %}
+    <div class="d-flex gap-5 mb-5">
+        {% for category in categories %}
+            <a href="{{ category.get_absolute_url }}" class="text-decoration-none text-dark text-opacity-75">
+                <div class="container text-center rounded shadow p-3">
+                    <img src="{{ category.photo.url }}" alt="фото категории" style="height: 150px; width: 250px;">
+                    <h4>{{ category.name }}</h4>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% endif %}

@@ -1,0 +1,24 @@
+<!-- Блок фильтрации -->
+<div class="p-3">
+    <div class="card sticky-top" style="width: 300px; top: 100px;">
+        <div class="card-body">
+            <h5 class="card-title text-center mb-2">Фильтры</h5>
+            {% comment %} action="{% url 'goods:goods_list' %}" {% endcomment %}
+            <form id="filter_form" method="get">
+                <p class="mb-2">Сортировка</p>
+                {{ filter_form.sort }}
+                <p class="mb-2">Цена</p>
+                {{ filter_form.min_price }}
+                {{ filter_form.max_price }}
+                <p class="mb-2">Цвет</p>
+                {{ filter_form.color }}
+                <p class="mb-2">Материал</p>
+                {{ filter_form.material }}
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary mb-2 mt-2">Применить</button>
+                    <a class="d-block" href="{% url "goods:goods_list" %}">Сбросить фильтры</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

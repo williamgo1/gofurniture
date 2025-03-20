@@ -3,7 +3,6 @@
 
 {% comment %} hx-push-url="true"  'В url при прокрутке будет обновляется параметр page' {% endcomment %} 
 {% for goods in goods_list %}
-    <!--проверка, что элемент последний в списке, для прогрузки следующих товаров-->
     {% if forloop.last %} 
     <div class="col-4 mb-4" 
         {% if not request.GET.search %}
@@ -15,34 +14,38 @@
         hx-get="{{ load_url }}?page={{ page_obj.number|add:1 }}"  
         hx-swap="afterend">
     {% else %} 
-    <div class="col-xl-4 mb-4">
+    <div class="col-4 mb-4">
     {% endif %}
         <!-- карточка товара -->
-        <div class="card custom-card" style="width: 18rem;">
+        <div class="card custom-card " style="width: 18rem;">
             {% include "goods/includes/toggle_favorite.html" with id=goods.id %}
             <a href="{{ goods.get_absolute_url }}">
                 <img src="{{ goods.photo.url }}" height="250" class="card-img-top" alt="фото товара">
             </a>
+
             <div class="card-body bg-body-secondary">
                 <!--цена, старая цена и скидка-->
-                
-                    {% if goods.current_price == goods.old_price %}
-                        <p class="text-center mb-2">{{ goods.current_price|intcomma }} ₽</p>
-                    {% else %}
-                    <div class="d-flex justify-content-between align-items-center card-price mb-2">
-                        <p class="me-2 p-1 bg-warning bg-opacity-75 rounded">{{ goods.current_price|intcomma }} ₽</p>
-                        <p class="me-2"><s>{{ goods.old_price|intcomma }} ₽</s></p>
-                        <p class="text-danger">Скидка: {{ goods.discount }}%</p>
-                    </div>
-                    {% endif %}
+                {% if goods.current_price == goods.old_price %}
+                    <p class="text-center mb-2">{{ goods.current_price|intcomma }} ₽</p>
+                {% else %}
+                <div class="d-flex justify-content-between align-items-center card-price mb-2">
+                    <p class="me-2 p-1 bg-warning bg-opacity-75 rounded">{{ goods.current_price|intcomma }} ₽</p>
+                    <p class="me-2"><s>{{ goods.old_price|intcomma }} ₽</s></p>
+                    <p class="text-danger">Скидка: {{ goods.current_discount }}%</p>
+                </div>
+                {% endif %}
 
+                <!--название-->
                 <div class="mb-2">
                     <a href="{{ goods.get_absolute_url }}" class="text-decoration-none text-body">
                         <h6 class="card-title">{{ goods.name|truncatechars:45 }}</h6>
                     </a>
                 </div>
-                <p class="card-text mb-2">Артикул: {{ goods.article }}</p>
 
+                <!--артикул-->
+                <p class="card-text mb-2">Артикул: {{ goods.article }}</p>
+                
+                <!--характеристики-->
                 <table>
                     <tbody>
                         <tr>

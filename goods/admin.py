@@ -4,7 +4,7 @@ from .models import Category, Goods, Price
 
 @admin.register(Goods)
 class GoodsAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug','article', 'quantity', 'time_update', 'get_categories']
+    list_display = ['name', 'slug','article', 'get_current_price', 'quantity', 'get_categories']
     list_display_links = ['name']
     fields = ['name', 'slug', 'article', 'characteristic', 'description', 'quantity', 'photo', 'categories']
     readonly_fields = ['slug', 'article', 'characteristic', 'description', 'photo']
@@ -19,9 +19,9 @@ class GoodsAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug']
+    list_display = ['name', 'slug', 'parent', 'photo']
     list_display_links = ['name']
-    readonly_fields = ['slug']
+    readonly_fields = ['slug', 'photo']
 
 
 @admin.register(Price)
